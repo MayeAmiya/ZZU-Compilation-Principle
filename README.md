@@ -46,8 +46,8 @@ This repository contains the experiments for the *Compilation Principle* course 
 
 #### Clone the repository:
 ```bash
-git clone https://github.com/MayeAmiya/work8-Compilation-Principle.git
-cd work8-Compilation-Principle
+git clone https://github.com/MayeAmiya/ZZU-Compilation-Principle.git
+cd ZZU-Compilation-Principle
 ```
 
 #### Build using Xmake:
