@@ -1,4 +1,4 @@
-#include "words.h"
+#include "lexer.h"
 #include <iostream>
 #include <string>
 #include <string_view>
@@ -12,10 +12,10 @@ int main()
     std::getline(std::cin, input);
     std::string_view sv = input;
 
-    words::word word(sv);
+    Lexer lexer(sv);
 
-    word.word_exec();
-    word.word_show();
+    lexer.lexer_exec();
+    lexer.lexer_show();
     system("pause");
     return 0;
 }
