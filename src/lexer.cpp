@@ -129,13 +129,10 @@ void Lexer::lexer_string()
         else {
             const char& b = *char_exec;
             this->_buffer.buffer_write(b);
-            if (b != '"') {
-                std::advance(char_exec, 1);
-            }
-            else {
+            std::advance(char_exec, 1);
+            if (b == '"') {
                 _output.push_back(Token(25, this->_buffer.buffer_read()));
                 this->_buffer.buffer_clear();   // 清空缓冲区
-                std::advance(char_exec, 1);
                 return;
             }
         }
