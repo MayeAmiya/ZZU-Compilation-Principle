@@ -1,5 +1,8 @@
+#include <iomanip>
 #include <iostream>
 #include <iterator>
+#include <regex>
+
 
 #include "lexer.h"
 #include "utils.h"
@@ -13,10 +16,10 @@ void Lexer::lexer_exec()
     // 似乎我们可以直接按空格和换行分割语素
     // 没有"" 所以不是关键字 就是字符串  如果数字开头 则是sum 如果不是 则报错
     // 逐个读取_input
-    while (char_exec < _input.end()) {
+    while (true) {
         const char& c = *char_exec;
         // 如果是空格 那么该结束读取
-        if (isspace(c)) {
+        if (isspace(c) || char_exec >= _input.end()) {
             if (this->_buffer.buffer_non_empty()) {
                 // 如果前空 直接跳过
                 if (this->_buffer.is_number_first()) {
@@ -27,8 +30,9 @@ void Lexer::lexer_exec()
                         _output.push_back(Token(26, std::stoi(this->_buffer.buffer_read())));
                     }
                     else {
-                        // 不是数字 也不是关键字 那就是标识符
-                        _output.push_back(Token(25, this->_buffer.buffer_read()));
+                        // 不是数字 也不是关键字 那就是标识符 你第一个数竟然是数字而你不是数字
+                        // 那你是个坏东西了
+                        _output.push_back(Token(-5, this->_buffer.buffer_read()));
                     }
                 }
                 else if (this->_buffer.is_keyword()) {
@@ -37,7 +41,8 @@ void Lexer::lexer_exec()
                                             this->_buffer.buffer_read()));
                 }
                 else {
-                    _output.push_back(Token(25, this->_buffer.buffer_read()));
+                    // 都不是，提交Token检测器
+                    this->lexer_token();
                 }
                 this->_buffer.buffer_clear();
             }
@@ -77,7 +82,8 @@ void Lexer::lexer_exec()
                                                 this->_buffer.buffer_read()));
                     }
                     else {
-                        _output.push_back(Token(25, this->_buffer.buffer_read()));
+                        // 都不是，提交Token检测器
+                        this->lexer_token();
                     }
                 }
                 this->_buffer.buffer_clear();   // 清空缓冲区
@@ -90,10 +96,19 @@ void Lexer::lexer_exec()
                 const char& b = *char_exec;
                 this->_buffer.buffer_write(b);
 
-                _output.push_back(Token(rwtab.find(this->_buffer.buffer_read())->second,
-                                        this->_buffer.buffer_read()));
-                this->_buffer.buffer_clear();
-                // 清空
+                if (rwtab.find(this->_buffer.buffer_read())->second == -2 ||
+                    rwtab.find(this->_buffer.buffer_read())->second == -3) {
+                    // 说明后面是注释内容
+
+                    // 注释处理器接管迭代器
+                    this->lexer_exegesis();
+                }
+                else {
+                    _output.push_back(Token(rwtab.find(this->_buffer.buffer_read())->second,
+                                            this->_buffer.buffer_read()));
+                    this->_buffer.buffer_clear();
+                    // 清空
+                }
             }
             else {
                 // 后一个不构成符号 保存本次符号
@@ -109,7 +124,12 @@ void Lexer::lexer_exec()
             this->_buffer.buffer_write(c);
         }
         // 迭代器前进
-        std::advance(char_exec, 1);
+        if (char_exec >= _input.end()) {
+            return;
+        }
+        else {
+            std::advance(char_exec, 1);
+        }
     }
 }
 
@@ -117,21 +137,29 @@ void Lexer::lexer_exec()
 
 void Lexer::lexer_string()
 {
-    const char& bc = *char_exec;
-    this->_buffer.buffer_write(bc);
+    const char& sc = *char_exec;
+    this->_buffer.buffer_write(sc);
     std::advance(char_exec, 1);
+
     while (char_exec != _input.end()) {
         if (this->is_escape()) {
             std::advance(char_exec, 1);
-            const char& b = *char_exec;
-            this->_buffer.buffer_write(b);
+            const char& s = *char_exec;
+            if (s == 'n') {
+                this->_buffer.buffer_write('\\');   // 正确处理换行符
+                this->_buffer.buffer_write('n');
+                std::advance(char_exec, 1);
+            }
+            else {
+                this->_buffer.buffer_write(s);
+            }
         }
         else {
-            const char& b = *char_exec;
-            this->_buffer.buffer_write(b);
+            const char& s = *char_exec;
+            this->_buffer.buffer_write(s);
             std::advance(char_exec, 1);
-            if (b == '"') {
-                _output.push_back(Token(25, this->_buffer.buffer_read()));
+            if (s == '"') {
+                _output.push_back(Token(100, this->_buffer.buffer_read()));
                 this->_buffer.buffer_clear();   // 清空缓冲区
                 return;
             }
@@ -139,54 +167,115 @@ void Lexer::lexer_string()
     }
 }
 
+
+void Lexer::lexer_exegesis()
+{
+    if (rwtab.find(this->_buffer.buffer_read())->second == -2) {
+        // 快进到换行符
+        this->_buffer.buffer_clear();   // 清空缓冲区
+        while (*char_exec != '\n' && char_exec != _input.end()) {
+            std::advance(char_exec, 1);
+        }
+    }
+    else {
+        /* 快进到下一个 */
+        this->_buffer.buffer_clear();   // 清空缓冲区
+        while (char_exec != _input.end() - 1) {
+            const char& ec      = *char_exec;
+            const char& next_ec = *(char_exec + 1);
+            if (ec == '*' && next_ec == '/') {
+                return;
+            }
+            std::advance(char_exec, 1);
+        }
+    }
+}
+
 void Lexer::lexer_token()
 {
-    // 也许有点token不合规范呢 含有某些不该存在的字符？
+    // 从缓冲区读取
+    std::string buffer_content = this->_buffer.buffer_read();
+
+    // 检查字符串是否符合规范
+    std::regex re("^[a-zA-Z_][a-zA-Z0-9_]*$");
+    if (std::regex_match(buffer_content, re)) {
+        // 符合规范
+        _output.push_back(Token(25, buffer_content));
+    }
+    else {
+        // 不符合规范，处理异常情况
+        _output.push_back(Token(-5, buffer_content));
+    }
 }
 
 void Lexer::lexer_show()
 {
     bool _isKeyWord = false;
-    bool _isSymbol  = false;
+    bool _isString  = false;
+    bool _isID      = false;
     bool _isError   = false;
+    bool _isEnd     = false;
     for (const Token& shoLexer : this->_output) {
-        _isKeyWord = true;
-        _isSymbol  = false;
+        _isKeyWord = false;
         _isError   = false;
+        _isString  = false;
+        _isID      = false;
+        _isEnd     = false;
         // 输出第一个元素 (syn)
-        std::cout << "syn: " << std::get<0>(shoLexer) << " ";
-        if (std::get<0>(shoLexer) == -1) {
+        std::cout << std::setw(6) << std::left << "syn: " << std::setw(4) << std::get<0>(shoLexer);
+        if (std::get<0>(shoLexer) <= -1) {
             _isError = true;
+            if (std::get<0>(shoLexer) == -1) {
+                std::cout << std::setw(12) << "[undefined]";
+            }
+            else if (std::get<0>(shoLexer) == -5) {
+                std::cout << std::setw(12) << "[illegal]";
+            }
         }
-        else if ((std::get<0>(shoLexer) >= 27 && std::get<0>(shoLexer) <= 43) ||
-                 std::get<0>(shoLexer) == 0) {
-            _isSymbol = true;
+        else if (std::get<0>(shoLexer) == 0) {
+            std::cout << std::setw(12) << " ";
+            _isEnd = true;
+        }
+        else if (std::get<0>(shoLexer) == 100) {
+            std::cout << std::setw(12) << " ";
+            _isString = true;
         }
         else if (std::get<0>(shoLexer) == 25) {
-            _isKeyWord = false;
+            std::cout << std::setw(12) << " ";
+            _isID = true;
+        }
+        else {
+            std::cout << std::setw(12) << " ";
+            _isKeyWord = true;
         }
         // 使用 std::visit 访问 std::variant 中的值
         std::visit(
-            [_isKeyWord, _isSymbol, _isError](const auto& arg) {
+            [_isKeyWord, _isError, _isEnd, _isString, _isID](const auto& arg) {
                 using T = std::decay_t<decltype(arg)>;   // 获取当前类型
 
                 // 判断当前是 std::string 还是 int
                 if constexpr (std::is_same_v<T, std::string>) {
                     if (_isError) {
-                        std::cout << "ERROR: " << arg;
-                    }
-                    else if (_isSymbol) {
-                        std::cout << "Symbol:   " << arg;
+                        std::cout << std::setw(18) << "ERROR: " << arg;
                     }
                     else if (_isKeyWord) {
-                        std::cout << "KeyWord: " << arg;
+                        std::cout << std::setw(18) << "KeyWord: " << arg;
+                    }
+                    else if (_isID) {
+                        std::cout << std::setw(18) << "ID: " << arg;
+                    }
+                    else if (_isEnd) {
+                        std::cout << std::setw(18) << "End: " << arg;
+                    }
+                    else if (_isString) {
+                        std::cout << std::setw(18) << "String: " << arg;
                     }
                     else {
-                        std::cout << "Token:   " << arg;
+                        std::cout << std::setw(18) << "Unknown Error:   " << arg;
                     }
                 }
                 else if constexpr (std::is_same_v<T, int>) {
-                    std::cout << "Num:     " << arg;
+                    std::cout << std::setw(18) << "Dight:     " << arg;
                 }
             },
             std::get<1>(shoLexer));   // 获取 variant 中的值

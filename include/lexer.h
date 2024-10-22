@@ -8,6 +8,7 @@
 
 #include "utils.h"
 
+// Token 组成为编号，内容(字符串或数字)
 using Token = std::tuple<int, std::variant<std::string, int>>;
 
 class Lexer
@@ -29,7 +30,7 @@ public:
     void lexer_show();
     void lexer_string();
     void lexer_token();
-
+    void lexer_exegesis();
     bool is_symbol();
     bool is_before_symbol();
     bool is_string();

@@ -8,8 +8,16 @@
 int main()
 {
     std::string input;
-    // 如果是子程序
-    std::getline(std::cin, input);
+    std::string line;
+
+    while (true) {
+        std::getline(std::cin, line);
+        if (line.empty()) {
+            break;   // 输入空行结束
+        }
+        input += line + "\n";   // 加入换行符
+    }
+
     std::string_view sv = input;
 
     Lexer lexer(sv);
