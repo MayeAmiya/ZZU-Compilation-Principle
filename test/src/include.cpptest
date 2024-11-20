@@ -1,8 +1,7 @@
 #ifndef includetest
 #define includetest
 
-#include "includetest"
-#include "include.cpptest"
+import <std>
 
 static int test;
 

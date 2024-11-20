@@ -1,24 +1,35 @@
 #ifndef parser_define
 #define parser_define
 
+#include <map>
+#include <set>
 #include <string>
 #include <vector>
 
+#include "lexer.h"
+
 class LLParser
 {
-    std::vector<std::string>              gramOldSet;
-    std::vector<std::string>              terSymbol;
-    std::vector<std::string>              nonTerSymbol;
-    std::vector<std::string>              allSymbol;
-    std::vector<std::vector<std::string>> firstSet;
-    std::vector<std::vector<std::string>> followSet;
-    std::vector<std::vector<int>>         M;
+public:
+    std::map<std::string, std::set<std::string>>    firstSet;
+    std::map<std::string, std::set<std::string>>    followSet;
+    std::map<std::string, std::vector<std::string>> grammar;
 
-    LLParser() = default;
-    void LLparser_first();
-    void LLparser_follow();
+    std::set<std::string>                                     terSymbol;      // 从rwtab中获取
+    std::set<std::string>                                     nonTerSymbol;   // 从formula中获取
+    std::map<std::string, std::map<std::string, std::string>> parseTable;
+
+    std::string llparser_result_output = "";
+
+    LLParser(std::string build_path) { llparser_result_output = build_path + "/llparser.out"; };
+
+    void LLparser_first(const std::string& symbol);
+    void LLparser_follow(const std::string& symbol);
+    void LLparser_grammar(const std::vector<std::string>&   formula,
+                          const std::map<std::string, int>& rwtab);
+    void LLparser_output();
     void LLparser_M();
-    void LLParsing();
+    void LLparsing(std::vector<Token> tokenlist);
 };
 
 typedef struct

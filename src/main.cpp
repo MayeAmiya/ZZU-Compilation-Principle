@@ -1,9 +1,11 @@
 #include "lexer.h"
+#include "parser.h"
 #include "utils.h"
 #include <fstream>
 #include <iostream>
 #include <string>
 #include <string_view>
+
 
 #ifdef _WIN32
 #    include <cstdlib>
@@ -20,9 +22,9 @@ int main()
     std::string filename;
     std::string build_path;
 
-    std::cout << "Please input the filepath";
-    std::cin >> filename;
-    // filename   = "/home/kei/code/work8/test/src/src.cpptest";
+    std::cout << "Please input the filepath : ";
+    // std::cin >> filename;
+    filename = "/home/kei/code/work8/test/src/src.cpptest";
     // std::cin >> build_path;
     build_path = "./build";
 
@@ -49,6 +51,11 @@ int main()
 
     lexer.lexer_exec();
     lexer.lexer_show();
+
+    LLParser llparser(build_path);
+    llparser.LLparser_output();
+    llparser.LLparser_M();
+    llparser.LLparsing(lexer._output);
 
     std::cout << std::endl << "Press Enter to continue..." << std::endl;
 

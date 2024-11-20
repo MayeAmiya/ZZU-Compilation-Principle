@@ -56,8 +56,6 @@ public:
     bool        buffer_non_empty();
 
     bool is_keyword();
-    bool is_number();
-    bool is_number_first();
 };
 
 

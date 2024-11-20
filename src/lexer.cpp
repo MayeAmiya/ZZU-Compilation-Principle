@@ -7,7 +7,7 @@
 
 
 #include "lexer.h"
-#include "rwtab.h"
+#include "preset/rwtab.h"
 #include "utils.h"
 
 
@@ -25,48 +25,31 @@ void Lexer::lexer_exec()
         if (isspace(c) || char_exec >= _input.end()) {
             if (this->_buffer.buffer_non_empty()) {
                 // 如果前空 直接跳过
-                if (this->_buffer.is_number_first()) {
-                    // 看看第一个数
-                    if (this->_buffer.is_number()) {
-                        // 看看是不是数字
-                        // 说实话 这里效率有损失 不如DFA高效
-                        _output.push_back(Token(26, std::stoi(this->_buffer.buffer_read())));
-                    }
-                    else {
-                        // 不是数字 也不是关键字 那就是标识符 你第一个数竟然是数字而你不是数字
-                        // 那你是个坏东西了
-                        _output.push_back(Token(-5, this->_buffer.buffer_read()));
-                    }
-                }
-                else if (this->_buffer.is_keyword()) {
+                if (this->_buffer.is_keyword()) {
                     // 如果不是 那么就检测是不是关键字
                     _output.push_back(
                         Token(std::distance(rwtab.begin(), rwtab.find(this->_buffer.buffer_read())),
                               this->_buffer.buffer_read()));
                 }
                 else {
-                    // 都不是，提交Token检测器
-                    this->lexer_token();
+                    // 都不是，提交Token检测器 归为id
+                    this->lexer_identifier();
                 }
                 this->_buffer.buffer_clear();
             }
         }
+
         else if (this->is_string()) {
-            // 保存上文 如果上文是空格或符号 那么已保存 所以这里只有可能是个token或num
+            // 保存上文 如果上文是空格或符号 那么已保存 所以这里只有可能是个identifier或number
             if (this->_buffer.buffer_non_empty()) {
                 // 如果是数字 那么处理为数字
-                if (this->_buffer.is_number()) {
-                    _output.push_back(Token(26, std::stoi(this->_buffer.buffer_read())));
+                if (this->_buffer.is_keyword()) {
+                    _output.push_back(
+                        Token(std::distance(rwtab.begin(), rwtab.find(this->_buffer.buffer_read())),
+                              this->_buffer.buffer_read()));
                 }
                 else {
-                    if (this->_buffer.is_keyword()) {
-                        _output.push_back(Token(
-                            std::distance(rwtab.begin(), rwtab.find(this->_buffer.buffer_read())),
-                            this->_buffer.buffer_read()));
-                    }
-                    else {
-                        _output.push_back(Token(25, this->_buffer.buffer_read()));
-                    }
+                    _output.push_back(Token(25, this->_buffer.buffer_read()));
                 }
                 this->_buffer.buffer_clear();   // 清空缓冲区
             }
@@ -77,20 +60,14 @@ void Lexer::lexer_exec()
             // 如果是符号
             // 保存上文
             if (this->_buffer.buffer_non_empty()) {
-                // 如果是数字 那么处理为数字
-                if (this->_buffer.is_number()) {
-                    _output.push_back(Token(26, std::stoi(this->_buffer.buffer_read())));
+                if (this->_buffer.is_keyword()) {
+                    _output.push_back(
+                        Token(std::distance(rwtab.begin(), rwtab.find(this->_buffer.buffer_read())),
+                              this->_buffer.buffer_read()));
                 }
                 else {
-                    if (this->_buffer.is_keyword()) {
-                        _output.push_back(Token(
-                            std::distance(rwtab.begin(), rwtab.find(this->_buffer.buffer_read())),
-                            this->_buffer.buffer_read()));
-                    }
-                    else {
-                        // 都不是，提交Token检测器
-                        this->lexer_token();
-                    }
+                    // 提交Token检测器
+                    this->lexer_identifier();
                 }
                 this->_buffer.buffer_clear();   // 清空缓冲区
             }
@@ -127,6 +104,22 @@ void Lexer::lexer_exec()
                 // 写入缓冲区 读取
             }
         }
+        else if (this->is_dight()) {
+            if (this->_buffer.buffer_non_empty()) {
+                // 如果是数字 那么处理为数字
+                if (this->_buffer.is_keyword()) {
+                    _output.push_back(
+                        Token(std::distance(rwtab.begin(), rwtab.find(this->_buffer.buffer_read())),
+                              this->_buffer.buffer_read()));
+                }
+                else {
+                    _output.push_back(Token(25, this->_buffer.buffer_read()));
+                }
+                this->_buffer.buffer_clear();   // 清空缓冲区
+            }
+            // 上一次读入后，这次遇到数字必定是数字开头
+            this->lexer_number();
+        }
         else {
             // 这里一定非空 所以直接写入
             this->_buffer.buffer_write(c);
@@ -154,12 +147,16 @@ void Lexer::lexer_string()
             std::advance(char_exec, 1);
             const char& s = *char_exec;
             if (s == 'n') {
-                this->_buffer.buffer_write('\\');   // 正确处理换行符
-                this->_buffer.buffer_write('n');
+                this->_buffer.buffer_write('\n');
+                std::advance(char_exec, 1);
+            }
+            else if (s == 't') {
+                this->_buffer.buffer_write('\t');
                 std::advance(char_exec, 1);
             }
             else {
                 this->_buffer.buffer_write(s);
+                std::advance(char_exec, 1);
             }
         }
         else {
@@ -178,6 +175,45 @@ void Lexer::lexer_string()
     }
 }
 
+void Lexer::lexer_number()
+{
+    const char& sc = *char_exec;
+    this->_buffer.buffer_write(sc);
+    std::advance(char_exec, 1);
+    bool is_point = false;
+    bool is_error = false;
+    while (char_exec != _input.end()) {
+        std::advance(char_exec, 1);
+        const char& s = *char_exec;
+        if (s == '.') {
+            if (is_point) {
+                is_error = true;
+            }
+            else {
+                is_point = true;
+            }
+            this->_buffer.buffer_write(s);
+            std::advance(char_exec, 1);
+        }
+        else if (isdigit(s)) {
+            this->_buffer.buffer_write(s);
+        }
+        else {
+            if (is_error) {
+                _output.push_back(Token(-5, this->_buffer.buffer_read()));
+            }
+            else if (is_point) {
+                _output.push_back(Token(27, std::stof(this->_buffer.buffer_read())));
+            }
+            else {
+                _output.push_back(Token(26, std::stoi(this->_buffer.buffer_read())));
+            }
+            this->_buffer.buffer_clear();   // 清空缓冲区
+            std::advance(char_exec, -1);
+            return;
+        }
+    }
+}
 
 void Lexer::lexer_comment()
 {
@@ -202,7 +238,7 @@ void Lexer::lexer_comment()
     }
 }
 
-void Lexer::lexer_token()
+void Lexer::lexer_identifier()
 {
     // 从缓冲区读取
     std::string buffer_content = this->_buffer.buffer_read();
@@ -222,6 +258,7 @@ void Lexer::lexer_token()
 void Lexer::lexer_show()
 {
     std::ofstream output(this->lexer_result_output, std::ios::out | std::ios::trunc);
+
     if (!output.is_open()) {
         std::cerr << "Failed to open lexer_result_output.txt" << std::endl;
         return;
@@ -279,7 +316,7 @@ void Lexer::lexer_show()
                         output << std::setw(18) << "KeyWord: " << arg;
                     }
                     else if (_isID) {
-                        output << std::setw(18) << "ID: " << arg;
+                        output << std::setw(18) << "Identifier: " << arg;
                     }
                     else if (_isEnd) {
                         output << std::setw(18) << "End: " << arg;
@@ -294,6 +331,9 @@ void Lexer::lexer_show()
                 else if constexpr (std::is_same_v<T, int>) {
                     output << std::setw(18) << "Dight:     " << arg;
                 }
+                else if constexpr (std::is_same_v<T, double>) {
+                    output << std::setw(18) << "Dight:     " << arg;
+                }
             },
             std::get<1>(shoLexer));   // 获取 variant 中的值
 
@@ -302,8 +342,6 @@ void Lexer::lexer_show()
     std::cout << "[Lexer:show] Lexer result output to " << this->lexer_result_output << std::endl
               << std::endl;
 }
-
-
 
 bool Lexer::is_before_symbol()
 {
@@ -349,6 +387,11 @@ bool Lexer::is_symbol()
 bool Lexer::is_string()
 {
     return *(char_exec) == '"';
+}
+
+bool Lexer::is_dight()
+{
+    return std::isdigit(*(char_exec));
 }
 
 bool Lexer::is_escape()

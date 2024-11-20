@@ -1,5 +1,6 @@
-#include "utils.h"
 #include "rwtab.h"
+#include "utils.h"
+
 
 
 void Buffer::buffer_clear()
@@ -42,22 +43,4 @@ bool Buffer::is_keyword()
     else {
         return false;
     }
-}
-
-bool Buffer::is_number()
-{
-    for (char c : b_buffer) {
-        if (c < 48 || c > 57) {
-            return false;
-        }
-    }
-    return true;
-}
-
-bool Buffer::is_number_first()
-{
-    if (b_buffer[0] >= 48 && b_buffer[0] <= 57) {
-        return true;
-    }
-    return false;
 }

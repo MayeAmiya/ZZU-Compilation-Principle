@@ -36,9 +36,12 @@ void Pretreat::build()
     this->current_path = current_path + "/";
     this->parent_path  = parent_path + "/";
 
-    this->build_stream.open(build_file, std::ios::app);
+    this->build_stream.open(build_file, std::ios::out | std::ios::trunc);
 
     this->pretreat(src_file);
+
+    build_stream << "#" << std::endl;
+    build_stream.close();
     std::cout << std::endl << "[Pretreat:build] build completed" << std::endl << std::endl;
 }
 
