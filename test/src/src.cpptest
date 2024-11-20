@@ -1,0 +1,12 @@
+#include "include.cpptest"
+#include <string>
+
+int main()
+{
+    std::string line;
+    std::string input;
+
+    std::cin >> line ;
+    std::cout << line << endl;
+    return 0;
+}

@@ -19,18 +19,21 @@ public:
     Buffer                     _buffer;
     std::string_view::iterator char_exec = _input.begin();
 
-    Lexer(std::string_view sv)
+    std::string lexer_result_output;
+
+    Lexer(std::string_view sv, std::string build_path)
         : _input(sv)
         , _buffer()
     {
-        char_exec = _input.begin();
+        char_exec           = _input.begin();
+        lexer_result_output = build_path + "/lexer.out";
     }
 
     void lexer_exec();
     void lexer_show();
     void lexer_string();
     void lexer_token();
-    void lexer_exegesis();
+    void lexer_comment();
     bool is_symbol();
     bool is_before_symbol();
     bool is_string();

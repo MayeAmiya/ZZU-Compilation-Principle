@@ -1,7 +1,9 @@
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <iterator>
 #include <regex>
+
 
 
 #include "lexer.h"
@@ -104,7 +106,7 @@ void Lexer::lexer_exec()
                     // 说明后面是注释内容
 
                     // 注释处理器接管迭代器
-                    this->lexer_exegesis();
+                    this->lexer_comment();
                 }
                 else {
                     _output.push_back(
@@ -162,18 +164,21 @@ void Lexer::lexer_string()
         else {
             const char& s = *char_exec;
             this->_buffer.buffer_write(s);
-            std::advance(char_exec, 1);
+
             if (s == '"') {
                 _output.push_back(Token(100, this->_buffer.buffer_read()));
                 this->_buffer.buffer_clear();   // 清空缓冲区
                 return;
+            }
+            else {
+                std::advance(char_exec, 1);
             }
         }
     }
 }
 
 
-void Lexer::lexer_exegesis()
+void Lexer::lexer_comment()
 {
     if (rwtab.find(this->_buffer.buffer_read())->second == -2) {
         // 快进到换行符
@@ -215,6 +220,12 @@ void Lexer::lexer_token()
 
 void Lexer::lexer_show()
 {
+    std::ofstream output(this->lexer_result_output, std::ios::out | std::ios::trunc);
+    if (!output.is_open()) {
+        std::cerr << "Failed to open lexer_result_output.txt" << std::endl;
+        return;
+    }
+
     bool _isKeyWord = false;
     bool _isString  = false;
     bool _isID      = false;
@@ -227,66 +238,67 @@ void Lexer::lexer_show()
         _isID      = false;
         _isEnd     = false;
         // 输出第一个元素 (syn)
-        std::cout << std::setw(6) << std::left << "syn: " << std::setw(4) << std::get<0>(shoLexer);
+        output << std::setw(6) << std::left << "syn: " << std::setw(4) << std::get<0>(shoLexer);
         if (std::get<0>(shoLexer) <= -1) {
             _isError = true;
             if (std::get<0>(shoLexer) == -1) {
-                std::cout << std::setw(12) << "[undefined]";
+                output << std::setw(12) << "[undefined]";
             }
             else if (std::get<0>(shoLexer) == -5) {
-                std::cout << std::setw(12) << "[illegal]";
+                output << std::setw(12) << "[illegal]";
             }
         }
         else if (std::get<0>(shoLexer) == 0) {
-            std::cout << std::setw(12) << " ";
+            output << std::setw(12) << " ";
             _isEnd = true;
         }
         else if (std::get<0>(shoLexer) == 100) {
-            std::cout << std::setw(12) << " ";
+            output << std::setw(12) << " ";
             _isString = true;
         }
         else if (std::get<0>(shoLexer) == 25) {
-            std::cout << std::setw(12) << " ";
+            output << std::setw(12) << " ";
             _isID = true;
         }
         else {
-            std::cout << std::setw(12) << " ";
+            output << std::setw(12) << " ";
             _isKeyWord = true;
         }
         // 使用 std::visit 访问 std::variant 中的值
         std::visit(
-            [_isKeyWord, _isError, _isEnd, _isString, _isID](const auto& arg) {
+            [_isKeyWord, _isError, _isEnd, _isString, _isID, &output](const auto& arg) {
                 using T = std::decay_t<decltype(arg)>;   // 获取当前类型
 
                 // 判断当前是 std::string 还是 int
                 if constexpr (std::is_same_v<T, std::string>) {
                     if (_isError) {
-                        std::cout << std::setw(18) << "ERROR: " << arg;
+                        output << std::setw(18) << "ERROR: " << arg;
                     }
                     else if (_isKeyWord) {
-                        std::cout << std::setw(18) << "KeyWord: " << arg;
+                        output << std::setw(18) << "KeyWord: " << arg;
                     }
                     else if (_isID) {
-                        std::cout << std::setw(18) << "ID: " << arg;
+                        output << std::setw(18) << "ID: " << arg;
                     }
                     else if (_isEnd) {
-                        std::cout << std::setw(18) << "End: " << arg;
+                        output << std::setw(18) << "End: " << arg;
                     }
                     else if (_isString) {
-                        std::cout << std::setw(18) << "String: " << arg;
+                        output << std::setw(18) << "String: " << arg;
                     }
                     else {
-                        std::cout << std::setw(18) << "Unknown Error:   " << arg;
+                        output << std::setw(18) << "Unknown Error:   " << arg;
                     }
                 }
                 else if constexpr (std::is_same_v<T, int>) {
-                    std::cout << std::setw(18) << "Dight:     " << arg;
+                    output << std::setw(18) << "Dight:     " << arg;
                 }
             },
             std::get<1>(shoLexer));   // 获取 variant 中的值
 
-        std::cout << std::endl;
+        output << std::endl;
     }
+    std::cout << "[Lexer:show] Lexer result output to " << this->lexer_result_output << std::endl;
 }
 
 

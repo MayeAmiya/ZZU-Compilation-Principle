@@ -1,4 +1,5 @@
 #include "lexer.h"
+#include "utils.h"
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -16,10 +17,15 @@ int main()
 
     std::string line;
     std::string input;
-    std::string filename;
+    std::string filename   = "/home/kei/code/work8/test/src/src.cpptest";
+    std::string build_path = "/home/kei/code/work8/test";
+    // std::cin >> filename;
+    // std::cin >> build_path;
 
-    std::cin >> filename;
-    std::ifstream inputFile(filename);   // 打开文件
+    Pretreat pretreat(filename, build_path);
+    pretreat.build();
+
+    std::ifstream inputFile(pretreat.build_file);
 
     if (inputFile.is_open()) {
         while (std::getline(inputFile, line)) {
@@ -35,16 +41,17 @@ int main()
 
     std::string_view sv = input;
 
-    Lexer lexer(sv);
+    Lexer lexer(sv, build_path);
 
     lexer.lexer_exec();
     lexer.lexer_show();
+
+    std::cout << "Press Enter to continue..." << std::endl;
 
 #ifdef _WIN32
     system("pause");
 #else
     std::cin.get();
 #endif
-
     return 0;
 }

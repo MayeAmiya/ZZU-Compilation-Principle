@@ -1,9 +1,48 @@
 #ifndef utils_define
 #define utils_define
 
+#include <fstream>
 #include <map>
+#include <regex>
 #include <string>
+#include <vector>
 
+
+// 预处理
+
+// 缓冲区
+
+class Pretreat
+{
+public:
+    std::string build_file;
+    std::string src_file;
+    std::string build_path;
+    std::string parent_path;
+    std::string current_path;
+
+    std::regex               ifndef_regex;
+    std::regex               define_regex;
+    std::regex               endif_regex;
+    std::regex               include_regex;
+    std::ofstream            build_stream;
+    std::vector<std::string> defines;
+
+    void        build();
+    std::string find_h(std::string include_file);
+    void        pretreat(std::string file);
+    bool        endDefined(std::ifstream& file, std::string define);
+
+    Pretreat(std::string filename, std::string build_path)
+        : src_file(filename)
+        , build_path(build_path)
+        , ifndef_regex(R"(^#ifndef\s+(\w+))")
+        , define_regex(R"(^#define\s+(\w+))")
+        , endif_regex(R"(^#endif)")
+        , include_regex(R"(^#include\s+\"([^\"]+)\")")
+    {}
+    ~Pretreat() { build_stream.close(); }
+};
 
 class Buffer
 {
@@ -36,5 +75,30 @@ static const std::map<std::string, int> rwtab = {
     {"(", 42},      {")", 43},     {"{", 44},        {"}", 45},     {"[", 53},      {"]", 54},
     {"//", -2},     {"/*", -3},    {"*/", -4},       {"#", 0}};
 
+static const std::vector<std::string> formula = {"S->if C then S else S",
+                                                 "S->if C then S",
+                                                 "S->while C do S",
+                                                 "S->ID := E",
+                                                 "S->break",
+                                                 "S->switch E case NUM : S",
+                                                 "S->return E",
+                                                 "S->ID ( )",
+                                                 "S->ID ( E )",
+                                                 "S->S ; S",
+                                                 "C->E < E",
+                                                 "C->E <= E",
+                                                 "C->E > E",
+                                                 "C->E >= E",
+                                                 "C->E == E",
+                                                 "C->E <> E",
+                                                 "E->E + T",
+                                                 "E->E - T",
+                                                 "E->T",
+                                                 "T->T * F",
+                                                 "T->T / F",
+                                                 "T->F",
+                                                 "F->( E )",
+                                                 "F->ID",
+                                                 "F->NUM"};
 
 #endif   // utils.h
