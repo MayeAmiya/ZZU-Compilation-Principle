@@ -14,7 +14,9 @@ add_rules("plugin.compile_commands.autoupdate", {outputdir = ".vscode"})
 target("work8")
     set_kind("binary")
     add_includedirs("include")
+    add_includedirs("include/preset")
     add_files("src/*.cpp")
+    add_files("src/utils/*.cpp")
 
     
 

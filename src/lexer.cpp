@@ -7,6 +7,7 @@
 
 
 #include "lexer.h"
+#include "rwtab.h"
 #include "utils.h"
 
 
@@ -298,7 +299,8 @@ void Lexer::lexer_show()
 
         output << std::endl;
     }
-    std::cout << "[Lexer:show] Lexer result output to " << this->lexer_result_output << std::endl;
+    std::cout << "[Lexer:show] Lexer result output to " << this->lexer_result_output << std::endl
+              << std::endl;
 }
 
 

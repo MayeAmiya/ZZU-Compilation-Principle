@@ -39,18 +39,16 @@ void Pretreat::build()
     this->build_stream.open(build_file, std::ios::app);
 
     this->pretreat(src_file);
+    std::cout << std::endl << "[Pretreat:build] build completed" << std::endl << std::endl;
 }
 
 std::string Pretreat::find_h(std::string include_file)
 {
     for (const auto& entry : std::filesystem::recursive_directory_iterator(parent_path)) {
         if (entry.path().filename() == include_file) {
-            std::cout << "[Pretreat:find] Include file found at: " << entry.path() << std::endl;
             return entry.path().string();
         }
     }
-    std::cout << "[Pretreat:find] Include file not found in parent path: " << this->parent_path
-              << std::endl;
     return "";
 }
 
@@ -76,37 +74,26 @@ void Pretreat::pretreat(std::string filename)
 
         while (std::getline(file, line)) {
             if (std::regex_search(line, match, ifndef_regex)) {
-                std::cout << "[Pretreat:" << filename << "] " << line << std::endl;
                 if (std::find(defines.begin(), defines.end(), match[1].str()) != defines.end()) {
-                    std::cout << "[Pretreat:" << filename << "] " << match[1].str() << " defined"
-                              << std::endl;
                     endDefined(file, match[1].str());   // 跳过已定义的部分
-                }
-                else {
-                    std::cout << "[Pretreat:" << filename << "] " << "Undefined " << match[1].str()
-                              << std::endl;
                 }
             }
             else if (std::regex_search(line, match, define_regex)) {
-                std::cout << "[Pretreat:" << filename << "] " << line << std::endl;
                 defines.push_back(match[1].str());
             }
             else if (std::regex_search(line, match, include_regex)) {
-                std::cout << "[Pretreat:" << filename << "] " << line << std::endl;
                 std::string include_file = match[1].str();
                 std::string real_file    = find_h(include_file);
                 if (real_file.empty()) {
                     std::cout << "[Pretreat:" << filename << "] "
-                              << "Include file not found" << std::endl;
+                              << "Include file not found :" << match[1].str() << std::endl;
                     build_stream << line << "[unfind]" << std::endl;
                 }
                 else {
                     pretreat(real_file);
                 }
             }
-            else if (std::regex_search(line, match, endif_regex)) {
-                std::cout << "[Pretreat:" << filename << "] " << line << std::endl;
-            }
+            else if (std::regex_search(line, match, endif_regex)) {}
             else {
                 build_stream << line << std::endl;
             }

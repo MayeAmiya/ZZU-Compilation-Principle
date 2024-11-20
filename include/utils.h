@@ -2,11 +2,9 @@
 #define utils_define
 
 #include <fstream>
-#include <map>
 #include <regex>
 #include <string>
 #include <vector>
-
 
 // 预处理
 
@@ -62,43 +60,7 @@ public:
     bool is_number_first();
 };
 
-static const std::map<std::string, int> rwtab = {
-    {"main", 1},    {"if", 2},     {"then", 3},      {"while", 4},  {"do", 5},      {"static", 6},
-    {"int", 7},     {"double", 8}, {"struct", 9},    {"break", 10}, {"else", 11},   {"long", 12},
-    {"switch", 13}, {"case", 14},  {"typedef", 15},  {"char", 16},  {"return", 17}, {"const", 18},
-    {"float", 19},  {"short", 20}, {"continue", 21}, {"for", 22},   {"void", 23},   {"sizeof", 24},
-    {"ID", 25},     {"NUM", 26},   {"default", 39},  {"+", 27},     {"-", 28},      {"*", 29},
-    {"/", 30},      {"%", 56},     {".", 57},        {"&", 59},     {"!", 60},      {"\"", 60},
-    {"^", 52},      {"=", 38},     {":", 31},        {":=", 32},    {"<", 33},      {"<>", 34},
-    {"<=", 35},     {">", 36},     {">=", 37},       {"==", 51},    {"do", 40},     {";", 41},
-    {"::", 46},     {"<-", 47},    {"->", 48},       {"<<", 49},    {">>", 50},     {",", 58},
-    {"(", 42},      {")", 43},     {"{", 44},        {"}", 45},     {"[", 53},      {"]", 54},
-    {"//", -2},     {"/*", -3},    {"*/", -4},       {"#", 0}};
 
-static const std::vector<std::string> formula = {"S->if C then S else S",
-                                                 "S->if C then S",
-                                                 "S->while C do S",
-                                                 "S->ID := E",
-                                                 "S->break",
-                                                 "S->switch E case NUM : S",
-                                                 "S->return E",
-                                                 "S->ID ( )",
-                                                 "S->ID ( E )",
-                                                 "S->S ; S",
-                                                 "C->E < E",
-                                                 "C->E <= E",
-                                                 "C->E > E",
-                                                 "C->E >= E",
-                                                 "C->E == E",
-                                                 "C->E <> E",
-                                                 "E->E + T",
-                                                 "E->E - T",
-                                                 "E->T",
-                                                 "T->T * F",
-                                                 "T->T / F",
-                                                 "T->F",
-                                                 "F->( E )",
-                                                 "F->ID",
-                                                 "F->NUM"};
+
 
 #endif   // utils.h

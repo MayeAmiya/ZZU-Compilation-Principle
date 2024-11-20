@@ -1,5 +1,5 @@
 #include "utils.h"
-
+#include "rwtab.h"
 
 
 void Buffer::buffer_clear()

@@ -17,10 +17,14 @@ int main()
 
     std::string line;
     std::string input;
-    std::string filename   = "/home/kei/code/work8/test/src/src.cpptest";
-    std::string build_path = "/home/kei/code/work8/test";
-    // std::cin >> filename;
+    std::string filename;
+    std::string build_path;
+
+    std::cout << "Please input the filepath";
+    std::cin >> filename;
+    // filename   = "/home/kei/code/work8/test/src/src.cpptest";
     // std::cin >> build_path;
+    build_path = "./build";
 
     Pretreat pretreat(filename, build_path);
     pretreat.build();
@@ -46,7 +50,7 @@ int main()
     lexer.lexer_exec();
     lexer.lexer_show();
 
-    std::cout << "Press Enter to continue..." << std::endl;
+    std::cout << std::endl << "Press Enter to continue..." << std::endl;
 
 #ifdef _WIN32
     system("pause");
