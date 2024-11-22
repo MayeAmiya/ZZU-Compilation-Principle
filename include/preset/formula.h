@@ -32,19 +32,21 @@ static const std::vector<std::string> formula = {
     "ParameterPrime -> ε",
     "ParameterPrime -> , ParameterFactor",
 
-    "ParametersFactor -> TypeFull Assignment ",
-    "ParametersFactor -> Container Assignment ",
+    "ParametersFactor -> TypeFull Operate ",
+    "ParametersFactor -> Container Operate ",
     // parameters
     "Statement ->let Declear ;",
-    "Declear -> TypeFull Assignments ",
-    "Declear -> Container Assignments ",
+    "Declear -> TypeFull Operate ",
+    "Declear -> Container Operate ",
     // 声明 declear
-    "Statement -> Assignments ;",
-    "Assignments -> Assignment AssignmentsPrime",
+    "Statement -> Operates ;",
+    "Operates -> Operate AssignmentsPrime",
     "AssignmentsPrime -> ε",
     "AssignmentsPrime -> , Assignment",
-
-    "Assignment -> identifier = Expression",
+    "Operate -> identifier OperateTerm",
+    "OperateTerm -> AssignmentTerm",
+    "OperateTerm -> FactorTerm",
+    "AssignmentTerm -> = Expression",
     // 赋值 assignments 不自动空值
     "Statement -> using identifier ;",
     // 定义命名规则
@@ -129,12 +131,12 @@ static const std::vector<std::string> formula = {
     "Factor -> string ",
     "Factor -> ! Expression",
     "Factor -> ( Expressions )",
-    "Factor -> identifier FactorPrime",
-    "FactorPrime -> ε",
-    "FactorPrime -> . identifier FactorPrime",
-    "FactorPrime -> -> identifier FactorPrime",
-    "FactorPrime -> [ Expression ] FactorPrime",
-    "FactorPrime -> ( Expressions ) FactorPrime",
+    "Factor -> identifier FactorTerm",
+    "FactorTerm -> ε",
+    "FactorTerm -> . identifier FactorTerm",
+    "FactorTerm -> -> identifier FactorTerm",
+    "FactorTerm -> [ Expression ] FactorTerm",
+    "FactorTerm -> ( Expressions ) FactorTerm",
 
     // 定义表达式Condition
     "Condition -> ConditionTermPrime ExpressionsPrime",

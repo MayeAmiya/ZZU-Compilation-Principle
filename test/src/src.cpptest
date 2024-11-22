@@ -4,13 +4,16 @@ main()
 {
     let string line = null;
     let string input = null;
+    let vector<int> list = null;
     let int a = null;
     let int b = null;
 
+    list.push_back(0);
     istream::cin >> a >> b;
 
     if(a>b){
-        ostream::cout << abs().string(a+b) << endl;
+        list.clear();
+        ostream::cout << abs(list[0]).string(a+b) << endl;
     }else{
         ostream::cout << full(string(a*b))  << endl;
     }

@@ -285,7 +285,7 @@ void LLParser::LLparsing(std::vector<Token> tokenlist)
 
         std::stack<std::string> tempStack = parseStack;
 
-        output << "index: " << index << std::endl;
+        output << "index: " << index + 1 << std::endl;
         output << "Top: " << top << std::endl << "Stack: ";
         while (!tempStack.empty()) {
             output << tempStack.top() << " ";
