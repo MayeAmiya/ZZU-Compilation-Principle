@@ -5,62 +5,68 @@
 #include <vector>
 
 static const std::vector<std::string> formula = {
-    "Src -> Imports Global Functions Main",
+    "Src -> Imports Global FunctionDefines Main",
     // 定义开始
     "Imports -> Import Imports",
     "Imports -> ε",
-    "Import -> import Identifier",
-    "Main -> int main ( Parameters ) { Statements }",
-    "Global -> int global ( Parameters ) { Statements }",
-    "Functions -> Function FunctionPrime",
-    "FunctionPrime -> Function",
-    "FunctionPrime -> ε",
-    "Function -> TypeFull identifier ( Parameters ) { Statements }",
-    // 定义函数
-    "Statements -> Statement Statements",
+    "Import -> import < identifier >",
+    // import
+    "Main -> main ( Parameters ) { Statements }",
+    "Global -> global ( Parameters ) { Statements }",
+    "Global -> ε",
+    // main和global
+    "FunctionDefines -> FunctionDefine FunctionDefinePrime",
+    "FunctionDefine -> ε",
+    "FunctionDefinePrime -> ε",
+    "FunctionDefinePrime -> FunctionDefine",
+
+    "FunctionDefine -> fn identifier ( Parameters ) { Statements }",
+    // funcdef func返回值由return定义
     "Statements -> ε",
+    "Statements -> Statement Statements",
+
     "Statement -> return Expression ;",
-
-    "Parameters -> Parameter ParameterPrime",
-    "ParameterPrime -> , ParametersPrime",
+    // statement结构
+    "Parameters -> ε",
+    "Parameters -> ParametersFactor ParameterPrime",
     "ParameterPrime -> ε",
-    "ParametersPrime -> TypeFull Assignment ",
-    "ParametersPrime -> Container Assignment ",
+    "ParameterPrime -> , ParameterFactor",
 
-    "Statement -> Parameter ;",
-    "Parameter -> TypeFull Assignments ",
-    "Parameter -> Container Assignments ",
-    "Parameter -> ε",
-    "Assignments -> Assignment AssignmentPrime",
-    "AssignmentPrime -> , Assignment",
-    "AssignmentPrime -> ε",
-    "Assignment -> Identifier = Expression",
-    "Assignment -> Identifier",
-    // 定义函数参数
-    "Statement -> using Namespace;",
-    "Namespace -> identifier",
-    "Identifier -> identifier IdentifierPrime",
-    "IdentifierPrime -> :: Identifier",
-    "IdentifierPrime -> ε",
+    "ParametersFactor -> TypeFull Assignment ",
+    "ParametersFactor -> Container Assignment ",
+    // parameters
+    "Statement ->let Declear ;",
+    "Declear -> TypeFull Assignments ",
+    "Declear -> Container Assignments ",
+    // 声明 declear
+    "Statement -> Assignments ;",
+    "Assignments -> Assignment AssignmentsPrime",
+    "AssignmentsPrime -> ε",
+    "AssignmentsPrime -> , Assignment",
+
+    "Assignment -> identifier = Expression",
+    // 赋值 assignments 不自动空值
+    "Statement -> using identifier ;",
     // 定义命名规则
-    "TypeFull -> Namespace :: TypePrime",
-    "TypeFull -> TypePrime",
-    "TypePrime -> const TypeBase",
-    "TypePrime -> static TypeBase",
-    "TypePrime -> TypeBase",
+    "TypeFull -> const TypeBase",
+    "TypeFull -> static TypeBase",
+    "TypeFull -> TypeBase",
+    "TypeBase -> identifier TypeBasePrime",
     "TypeBase -> Type TypeBasePrime",
+    "TypeBasePrime -> ε",
     "TypeBasePrime -> &",
     "TypeBasePrime -> *",
-    "TypeBasePrime -> ε",
-    "Type -> Identifier",
+
+    "Type -> byte",
     "Type -> char",
     "Type -> short",
     "Type -> int",
     "Type -> long",
+    "Type -> float",
     "Type -> double",
+    "Type -> boolean",
     // 定义类型规则
-    "Container -> Namespace :: ContainerType < TypeFull > ",
-    "Container -> ContainerType < TypeFull >",
+    "Container -> ContainerType < TypeFull > ",
     "ContainerType -> vector",
     "ContainerType -> map",
     "ContainerType -> set",
@@ -68,77 +74,86 @@ static const std::vector<std::string> formula = {
     "ContainerType -> queue",
     "ContainerType -> deque",
     // 定义容器规则
-    "Statement -> Identifier OStreams ;",
-    "Statement -> Identifier IStreams ;",
-    "OStream -> << String",
-    "OStream -> << Identifier",
-    "OStreams -> OStream OStreams",
+    "Statement -> ostream :: identifier OStreams ;",
+    "OStream -> << Expression",
     "OStreams -> ε",
-    "IStream -> >> Identifier",
-    "IStreams -> IStream IStreams",
+    "OStreams -> OStream OStreams",
+
+    // 输出流
+    "Statement -> istream :: identifier IStreams ;",
+    "IStream -> >> identifier",
     "IStreams -> ε",
-    // 定义流操作
-    "Statement -> if ( Condition ) { Statements } ElseStatements",
-    "ElseStatements -> ElseStatement ElseStatements",
-    "ElseStatements -> ε",
+    "IStreams -> IStream IStreams",
+
+    // 输入流
+    "Statement -> if ( Condition ) { Statements } ElseStatement",
+    "ElseStatement -> ε",
     "ElseStatement -> else { Statements } ",
+
     // 定义if语句
     "Statement -> while ( Condition ) do { Statements }",
     "Statement -> break ;",
     "Statement -> continue ;",
+    // while do
     "Statement -> switch ( Expression ) { CaseStatements }",
     "CaseStatement -> case Expression : Statements",
     "CaseStatement -> default : Statements",
-    "CaseStatements -> CaseStatement CaseStatements",
     "CaseStatements -> ε",
-    // 定义switch case语句
+    "CaseStatements -> CaseStatement CaseStatements",
+
+    // switch case
     "Statement -> for ( ForStatement ) { Statements }",
-    "ForStatement -> Assignment ; Condition ; Assignment",
-    "ForStatement -> auto identifier : identifier",
     "ForStatement -> ε",
-    // 定义for语句
-    "Condition -> ConditionTerm ConditionPrime",
-    "ConditionPrime -> && ConditionTerm ConditionPrime",
-    "ConditionPrime -> || ConditionTerm ConditionPrime",
-    "ConditionPrime -> ε",
-    "ConditionTerm -> ! ConditionTerm",
-    "ConditionTerm -> ( Condition )",
-    "ConditionTerm -> Expression < Expression",
-    "ConditionTerm -> Expression <= Expression",
-    "ConditionTerm -> Expression > Expression",
-    "ConditionTerm -> Expression >= Expression",
-    "ConditionTerm -> Expression == Expression",
-    "ConditionTerm -> Expression != Expression",
-    // 定义条件语句
+    "ForStatement -> Declear ; Condition ; Expression",
+    "ForStatement -> auto identifier : identifier",
+
+    // for语
+    "Expressions -> ε",
+    "Expressions -> Expression ExpressionsPrime",
+    "ExpressionsPrime -> ε",
+    "ExpressionsPrime -> , Expression ExpressionsPrime",
+
     "Expression -> Term ExpressionPrime",
+    "ExpressionPrime -> ε",
     "ExpressionPrime -> + Term ExpressionPrime",
     "ExpressionPrime -> - Term ExpressionPrime",
-    "ExpressionPrime -> ε",
+
     "Term -> Factor TermPrime",
+    "TermPrime -> ε",
     "TermPrime -> * Factor TermPrime",
     "TermPrime -> / Factor TermPrime",
-    "TermPrime -> ε",
-    "Factor -> ( Expression )",
-    "Factor -> Identifier ",
+
+    "Factor -> null",
     "Factor -> intNumber ",
     "Factor -> floatNumber ",
     "Factor -> string ",
-    "Factor -> FunctionCalls",
-    "Factor -> Identifier . identifier",
-    "Factor -> Identifier -> identifier",
-    "Factor -> Identifier [ Expression ]",
-    // 定义表达式
-    "FunctionCalls -> FunctionCall FunctionCallsPrime",
-    "FunctionCallsPrime -> . FunctionCall FunctionCallsPrime",
-    "FunctionCallsPrime -> ε",
-    "FunctionCall -> identifier ( Parameters )",
-    // 定义函数调用
-    "Statement -> class Identifier { ClassStatements } ;",
-    "ClassStatements -> ClassStatement ClassStatements",
-    "ClassStatements -> ε",
-    "ClassStatement -> Function",
-    "ClassStatement -> Parameters",
-    // 定义类 结构体不需要了
+    "Factor -> ! Expression",
+    "Factor -> ( Expressions )",
+    "Factor -> identifier FactorPrime",
+    "FactorPrime -> ε",
+    "FactorPrime -> . identifier FactorPrime",
+    "FactorPrime -> -> identifier FactorPrime",
+    "FactorPrime -> [ Expression ] FactorPrime",
+    "FactorPrime -> ( Expressions ) FactorPrime",
+
+    // 定义表达式Condition
+    "Condition -> ConditionTermPrime ExpressionsPrime",
+    "ExpressionsPrime -> && ConditionTermPrime ExpressionsPrime",
+    "ExpressionsPrime -> || ConditionTermPrime ExpressionsPrime",
+
+    "ConditionTermPrime -> Expression ConditionTerm",
+    "ConditionTerm -> ε",
+    "ConditionTerm -> < Expression",
+    "ConditionTerm -> <= Expression",
+    "ConditionTerm -> > Expression",
+    "ConditionTerm -> >= Expression",
+    "ConditionTerm -> == Expression",
+    "ConditionTerm -> != Expression",
+
+    // 定义条件语句
+    // "Statement -> class identifier { Statements } ;",
+    // "Expression -> class identifier { Statements } ;",
+    // // 定义类 结构体不需要了
     // identifier 和 number 由词法分析器提供
 };
 

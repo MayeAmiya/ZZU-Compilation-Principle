@@ -9,12 +9,14 @@
 
 void LLParser::LLparser_first(const std::string& symbol)
 {
+    // 初始化该集
     if (firstSet.find(symbol) != firstSet.end()) {
         return;
     }
-
-    firstSet[symbol] = std::set<std::string>();
-
+    else {
+        firstSet[symbol] = std::set<std::string>();
+    }
+    // 遍历语法
     for (const std::string& production : grammar[symbol]) {
         std::istringstream iss(production);
         std::string        token;
@@ -27,6 +29,7 @@ void LLParser::LLparser_first(const std::string& symbol)
                 }
             }
             else {
+                // 终结符直接填入
                 firstSet[symbol].insert(token);
                 break;
             }
@@ -34,20 +37,22 @@ void LLParser::LLparser_first(const std::string& symbol)
     }
 }
 
-void LLParser::LLparser_follow(const std::string& symbol)
+bool LLParser::LLparser_follow(const std::string& symbol, bool second = false)
 {
     if (followSet.find(symbol) != followSet.end()) {
-        return;
+        return true;
     }
-
-    followSet[symbol] = std::set<std::string>();
+    else {
+        followSet[symbol] = std::set<std::string>();
+    }
 
     if (symbol == "Src" || symbol == "Main") {
         followSet[symbol].insert("#");
     }
-
     for (const auto& entry : grammar) {
+        // 产生式左部
         const std::string& lhs = entry.first;
+        // 遍历产生式
         for (const std::string& production : entry.second) {
             std::istringstream       iss(production);
             std::vector<std::string> tokens;
@@ -55,32 +60,51 @@ void LLParser::LLparser_follow(const std::string& symbol)
             while (iss >> token) {
                 tokens.push_back(token);
             }
+            // 设置非空符号
+            bool epsilonInNextFirst = true;
+            // 分解token为单个符号 遍历
             for (size_t i = 0; i < tokens.size(); ++i) {
+                // 遍历token 如果该符号等于读取到的token 即在此处分析
                 if (tokens[i] == symbol) {
-                    if (i + 1 < tokens.size()) {
-                        std::string nextSymbol = tokens[i + 1];
-                        if (isupper(nextSymbol[0])) {
-                            followSet[symbol].insert(firstSet[nextSymbol].begin(),
-                                                     firstSet[nextSymbol].end());
-                            followSet[symbol].erase("ε");
-                            if (firstSet[nextSymbol].find("ε") != firstSet[nextSymbol].end()) {
-                                LLparser_follow(lhs);
-                                followSet[symbol].insert(followSet[lhs].begin(),
-                                                         followSet[lhs].end());
+                    // 从下一个符号开始读
+                    for (size_t j = i + 1; j < tokens.size() && epsilonInNextFirst; ++j) {
+                        epsilonInNextFirst = false;   // 假设有ε
+                        if (isupper(tokens[j][0])) {
+                            // 遍历该token的first集
+                            for (const std::string& first : firstSet[tokens[j]]) {
+                                if (first != "ε") {
+                                    // 非ε填入
+                                    followSet[symbol].insert(first);
+                                }
+                                else {
+                                    // ε 认为可空 继续往下读
+                                    epsilonInNextFirst = true;
+                                }
                             }
                         }
                         else {
-                            followSet[symbol].insert(nextSymbol);
+                            // 终结符直接填入follow集
+                            followSet[symbol].insert(tokens[j]);
+                            break;
                         }
                     }
-                    else {
-                        LLparser_follow(lhs);
-                        followSet[symbol].insert(followSet[lhs].begin(), followSet[lhs].end());
+                    // 到末尾都可为ε 则读左部的follow集
+                    if (epsilonInNextFirst || i + 1 == tokens.size()) {
+                        LLparser_follow(lhs, second);
+                        if (second) {
+                            followSet[symbol].insert(followSettemp[lhs].begin(),
+                                                     followSettemp[lhs].end());
+                        }
+                        else {
+                            LLparser_follow(lhs, second);
+                            followSet[symbol].insert(followSet[lhs].begin(), followSet[lhs].end());
+                        }
                     }
                 }
             }
         }
     }
+    return true;
 }
 
 void LLParser::LLparser_grammar(const std::vector<std::string>&   formula,
@@ -108,6 +132,67 @@ void LLParser::LLparser_grammar(const std::vector<std::string>&   formula,
     }
     output << std::endl;
 }
+
+void LLParser::LLparser_M()
+{
+    for (const auto& entry : grammar) {
+        // grammar 是一个map key是个vector 包含非终结符对应的所有产生式
+        const std::string& nonTerminal = entry.first;
+        // 读出非终结符
+        for (const std::string& production : entry.second) {
+            // 对于每个产生式作为production
+            std::istringstream iss(production);
+            std::string        token;
+            iss >> token;
+            // 使用字符串流读取产生式的第一个符号
+            if (isupper(token[0])) {
+                // 如果是大写 即非终结符
+                for (const std::string& first : firstSet[token]) {
+                    // 遍历first集 对应产生式
+                    if (first != "ε") {
+                        parseTable[nonTerminal][first] = production;
+                    }
+                }
+                // 同样的 如果first集中有ε 那么对应follow集的符号对应产生式
+                if (firstSet[token].find("ε") != firstSet[token].end()) {
+                    for (const std::string& follow : followSet[nonTerminal]) {
+                        parseTable[nonTerminal][follow] = production;
+                    }
+                }
+            }
+            // 如果是ε 直接对应follow集的符号对应产生式
+            else if (token == "ε") {
+                for (const std::string& follow : followSet[nonTerminal]) {
+                    parseTable[nonTerminal][follow] = production;
+                }
+            }
+            else {
+                // 如果是小写 即终结符 直接对应产生式
+                parseTable[nonTerminal][token] = production;
+            }
+        }
+    }
+
+
+    std::ofstream output(this->llparser_result_output + "_M", std::ios::out | std::ios::trunc);
+    if (!output.is_open()) {
+        std::cerr << "[LLparser_output] Failed to open lexer_result_output.txt" << std::endl;
+        return;
+    }
+
+    output << std::endl << "Parse Table:" << std::endl;
+    for (const auto& row : parseTable) {
+        for (const auto& col : row.second) {
+            output << "M[" << row.first << ", " << col.first << "] = " << col.second << std::endl;
+        }
+    }
+    output << std::endl;
+
+    std::cout << "[LLParser:LLparser_M] Parse table output to " << this->llparser_result_output
+              << std::endl
+              << std::endl;
+}
+
 void LLParser::LLparser_output()
 {
     LLparser_grammar(formula, rwtab);
@@ -139,10 +224,21 @@ void LLParser::LLparser_output()
         output << " }" << std::endl;
     }
     output << std::endl;
+
     // 计算 FOLLOW 集
     for (const auto& entry : grammar) {
         LLparser_follow(entry.first);
     }
+    // 因为莫名其妙的原因 需要多次计算follow集
+    // 猜测是因为计算顺序的关系 每次计算follow集都会有新的符号加入
+    while (followSettemp != followSet) {
+        followSettemp = followSet;
+        followSet.clear();
+        for (const auto& entry : grammar) {
+            LLparser_follow(entry.first, true);
+        }
+    }
+
 
     // 输出 FOLLOW 集
     output << "FOLLOW sets:" << std::endl;
@@ -164,82 +260,64 @@ void LLParser::LLparser_output()
               << std::endl;
 }
 
-void LLParser::LLparser_M()
+void LLParser::LLparsing(std::vector<Token> tokenlist)
 {
-    std::map<std::string, std::map<std::string, std::string>> parseTable;
-
-    for (const auto& entry : grammar) {
-        const std::string& nonTerminal = entry.first;
-        for (const std::string& production : entry.second) {
-            std::istringstream iss(production);
-            std::string        token;
-            iss >> token;
-
-            if (isupper(token[0])) {
-                for (const std::string& first : firstSet[token]) {
-                    if (first != "ε") {
-                        parseTable[nonTerminal][first] = production;
-                    }
-                }
-                if (firstSet[token].find("ε") != firstSet[token].end()) {
-                    for (const std::string& follow : followSet[nonTerminal]) {
-                        parseTable[nonTerminal][follow] = production;
-                    }
-                }
-            }
-            else {
-                parseTable[nonTerminal][token] = production;
-            }
-        }
-    }
-
-    std::ofstream output(this->llparser_result_output, std::ios::out | std::ios::app);
+    std::ofstream output(this->llparser_result_output + "_P", std::ios::out | std::ios::trunc);
     if (!output.is_open()) {
         std::cerr << "[LLparser_output] Failed to open lexer_result_output.txt" << std::endl;
         return;
     }
 
-    output << std::endl << "Parse Table:" << std::endl;
-    for (const auto& row : parseTable) {
-        for (const auto& col : row.second) {
-            output << "M[" << row.first << ", " << col.first << "] = " << col.second << std::endl;
-        }
-    }
-    std::cout << "[LLParser:LLparser_M] Parse table output to " << this->llparser_result_output
-              << std::endl;
-}
-
-void LLParser::LLparsing(std::vector<Token> tokenlist)
-{
     std::stack<std::string> parseStack;
+    // 分析栈
     parseStack.push("#");
     parseStack.push("Src");
 
     size_t index = 0;
+    // 读取tokenlist的索引
     while (!parseStack.empty()) {
         std::string top = parseStack.top();
         parseStack.pop();
-
-        if (top == "#") {
-            if (index == tokenlist.size()) {
-                std::cout << "[LLparser_Parsing] Parsing successful!" << std::endl;
-            }
-            else {
-                std::cerr << "[LLparser_Parsing] Parsing failed: unexpected tokens at the end."
-                          << std::endl;
-            }
-            return;
-        }
+        // 弹出栈顶元素 判断是否结束
 
         int         tokenType = std::get<0>(tokenlist[index]);
         std::string token;
-        switch (tokenType) {
-        case 25: token = "identifier"; break;
-        case 26: token = "intNumber"; break;
-        case 27: token = "floatNumber"; break;
-        case 100: token = "string"; break;
-        default: token = std::get<std::string>(std::get<1>(tokenlist[index])); break;
+
+        std::stack<std::string> tempStack = parseStack;
+
+        output << "index: " << index << std::endl;
+        output << "Top: " << top << std::endl << "Stack: ";
+        while (!tempStack.empty()) {
+            output << tempStack.top() << " ";
+            tempStack.pop();
         }
+        output << std::endl << "Read: ";
+        switch (tokenType) {
+        case 25:
+            token = "identifier";
+            output << "identifier: " << std::get<std::string>(std::get<1>(tokenlist[index]));
+            break;
+        case 26:
+            token = "intNumber";
+            output << "intNumber: " << std::to_string(std::get<int>(std::get<1>(tokenlist[index])));
+            break;
+        case 27:
+            token = "floatNumber";
+            output << "floatNumber: "
+                   << std::to_string(std::get<double>(std::get<1>(tokenlist[index])));
+            break;
+        case 100:
+            token = "string";
+            output << "string: " << std::get<std::string>(std::get<1>(tokenlist[index]));
+            break;
+        default:
+            token = std::get<std::string>(std::get<1>(tokenlist[index]));
+            output << "Vt: " << token;
+            break;
+        }
+        // 输出token和栈信息
+        output << std::endl;
+
 
         if (isupper(top[0])) {
             if (index < tokenlist.size() && parseTable[top].find(token) != parseTable[top].end()) {
@@ -247,6 +325,8 @@ void LLParser::LLparsing(std::vector<Token> tokenlist)
                 std::istringstream       iss(production);
                 std::vector<std::string> tokens;
                 std::string              token;
+
+                output << "Production: " << production << std::endl << std::endl;
                 while (iss >> token) {
                     tokens.push_back(token);
                 }
@@ -261,30 +341,28 @@ void LLParser::LLparsing(std::vector<Token> tokenlist)
                           << " with token " << token << std::endl;
                 return;
             }
-            std::stack<std::string> tempStack = parseStack;
-            std::cout << "Stack: ";
-            while (!tempStack.empty()) {
-                std::cout << tempStack.top() << " ";
-                tempStack.pop();
-            }
-            std::cout << std::endl;
         }
         else {
             if (index < tokenlist.size() && top == token) {
                 ++index;
+                output << "Matched!" << std::endl << std::endl;
+                if (top == "#") {
+                    if (index == tokenlist.size()) {
+                        std::cout << "[LLparser_Parsing] Parsing successful!" << std::endl;
+                    }
+                    else {
+                        std::cerr << "[LLparser_Parsing] Parsing failed: unexpected tokens at "
+                                     "the end."
+                                  << std::endl;
+                    }
+                    return;
+                }
             }
             else {
                 std::cerr << "[LLparser_Parsing] Parsing failed: expected " << top << " but found "
                           << token << std::endl;
                 return;
             }
-            std::stack<std::string> tempStack = parseStack;
-            std::cout << "Stack: ";
-            while (!tempStack.empty()) {
-                std::cout << tempStack.top() << " ";
-                tempStack.pop();
-            }
-            std::cout << std::endl;
         }
     }
 }

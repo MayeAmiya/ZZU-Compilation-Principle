@@ -2,7 +2,11 @@
 #define includetest
 
 import <std>
+import <string>
 
-static int test;
+global(){
+    let static int test = 1;
+    let vector <int> testc = null;
+}
 
 #endif

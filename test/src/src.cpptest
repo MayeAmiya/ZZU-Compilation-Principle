@@ -1,13 +1,22 @@
 #include "include.cpptest"
 
-import <string>
-
-int main()
+main()
 {
-    std::string line;
-    std::string input;
+    let string line = null;
+    let string input = null;
+    let int a = null;
+    let int b = null;
 
-    std::cin >> line ;
-    std::cout << line << endl;
+    istream::cin >> a >> b;
+
+    if(a>b){
+        ostream::cout << abs().string(a+b) << endl;
+    }else{
+        ostream::cout << full(string(a*b))  << endl;
+    }
+
+    if(a||b){
+        ostream::cout << string(a+(a+b)) << endl;
+    }
     return 0;
 }

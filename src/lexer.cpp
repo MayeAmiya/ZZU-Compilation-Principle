@@ -28,8 +28,7 @@ void Lexer::lexer_exec()
                 if (this->_buffer.is_keyword()) {
                     // 如果不是 那么就检测是不是关键字
                     _output.push_back(
-                        Token(std::distance(rwtab.begin(), rwtab.find(this->_buffer.buffer_read())),
-                              this->_buffer.buffer_read()));
+                        Token(rwtab.at(this->_buffer.buffer_read()), this->_buffer.buffer_read()));
                 }
                 else {
                     // 都不是，提交Token检测器 归为id
@@ -45,8 +44,7 @@ void Lexer::lexer_exec()
                 // 如果是数字 那么处理为数字
                 if (this->_buffer.is_keyword()) {
                     _output.push_back(
-                        Token(std::distance(rwtab.begin(), rwtab.find(this->_buffer.buffer_read())),
-                              this->_buffer.buffer_read()));
+                        Token(rwtab.at(this->_buffer.buffer_read()), this->_buffer.buffer_read()));
                 }
                 else {
                     _output.push_back(Token(25, this->_buffer.buffer_read()));
@@ -62,8 +60,7 @@ void Lexer::lexer_exec()
             if (this->_buffer.buffer_non_empty()) {
                 if (this->_buffer.is_keyword()) {
                     _output.push_back(
-                        Token(std::distance(rwtab.begin(), rwtab.find(this->_buffer.buffer_read())),
-                              this->_buffer.buffer_read()));
+                        Token(rwtab.at(this->_buffer.buffer_read()), this->_buffer.buffer_read()));
                 }
                 else {
                     // 提交Token检测器
@@ -88,8 +85,7 @@ void Lexer::lexer_exec()
                 }
                 else {
                     _output.push_back(
-                        Token(std::distance(rwtab.begin(), rwtab.find(this->_buffer.buffer_read())),
-                              this->_buffer.buffer_read()));
+                        Token(rwtab.at(this->_buffer.buffer_read()), this->_buffer.buffer_read()));
                     this->_buffer.buffer_clear();
                     // 清空
                 }
@@ -98,8 +94,7 @@ void Lexer::lexer_exec()
                 // 后一个不构成符号 保存本次符号
                 this->_buffer.buffer_write(c);
                 _output.push_back(
-                    Token(std::distance(rwtab.begin(), rwtab.find(this->_buffer.buffer_read())),
-                          this->_buffer.buffer_read()));
+                    Token(rwtab.at(this->_buffer.buffer_read()), this->_buffer.buffer_read()));
                 this->_buffer.buffer_clear();
                 // 写入缓冲区 读取
             }
@@ -109,8 +104,7 @@ void Lexer::lexer_exec()
                 // 如果是数字 那么处理为数字
                 if (this->_buffer.is_keyword()) {
                     _output.push_back(
-                        Token(std::distance(rwtab.begin(), rwtab.find(this->_buffer.buffer_read())),
-                              this->_buffer.buffer_read()));
+                        Token(rwtab.at(this->_buffer.buffer_read()), this->_buffer.buffer_read()));
                 }
                 else {
                     _output.push_back(Token(25, this->_buffer.buffer_read()));
@@ -124,6 +118,7 @@ void Lexer::lexer_exec()
             // 这里一定非空 所以直接写入
             this->_buffer.buffer_write(c);
         }
+
         // 迭代器前进
         if (char_exec >= _input.end()) {
             return;
@@ -209,7 +204,7 @@ void Lexer::lexer_number()
                 _output.push_back(Token(26, std::stoi(this->_buffer.buffer_read())));
             }
             this->_buffer.buffer_clear();   // 清空缓冲区
-            std::advance(char_exec, -1);
+            std::advance(char_exec, -2);
             return;
         }
     }
@@ -284,6 +279,9 @@ void Lexer::lexer_show()
             }
             else if (std::get<0>(shoLexer) == -5) {
                 output << std::setw(12) << "[illegal]";
+            }
+            else {
+                output << std::setw(12) << "[error]";
             }
         }
         else if (std::get<0>(shoLexer) == 0) {

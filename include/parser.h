@@ -12,6 +12,7 @@ class LLParser
 {
 public:
     std::map<std::string, std::set<std::string>>    firstSet;
+    std::map<std::string, std::set<std::string>>    followSettemp;
     std::map<std::string, std::set<std::string>>    followSet;
     std::map<std::string, std::vector<std::string>> grammar;
 
@@ -24,7 +25,7 @@ public:
     LLParser(std::string build_path) { llparser_result_output = build_path + "/llparser.out"; };
 
     void LLparser_first(const std::string& symbol);
-    void LLparser_follow(const std::string& symbol);
+    bool LLparser_follow(const std::string& symbol, bool second);
     void LLparser_grammar(const std::vector<std::string>&   formula,
                           const std::map<std::string, int>& rwtab);
     void LLparser_output();

@@ -6,8 +6,6 @@
 ## 项目特点
 
 - **Xmake 构建系统**：简化项目配置和依赖管理。
-- **MSVC 标准库**：使用 MSVC 标准库。
-- **LLVM 工具链**：使用 LLVM 工具链编译项目。
 - **C++20**：使用次新的 C++20 标准进行编写。
 
 ## 项目结构
@@ -27,8 +25,6 @@ This repository contains the experiments for the *Compilation Principle* course 
 ## Features
 
 - **Xmake Build System**: Easy project configuration and dependency management.
-- **MSVC STL**: Utilizing the MSVC Standard Library.
-- **LLVM Toolchain**: Compiling the project with the LLVM toolchain.
 - **C++20**: Written using the latest C++20 standard.
 
 ## Project Structure
@@ -50,18 +46,22 @@ git clone https://github.com/MayeAmiya/ZZU-Compilation-Principle.git
 cd ZZU-Compilation-Principle
 ```
 
-#### Build using Xmake:
+#### Build using Xmake
+
 ```bash
-xmake
+xmake build
 ```
 
-#### Run the project:
+#### Run the project
+
 ```bash
 xmake run
 ```
 
-#### Debugging:
+#### Debugging
+
 - **If you want to debug the project**: make sure you have GDB installed and configured for your environment. You can launch the debugger with the following command:
+
 ```bash
 xmake run -d
 ```
