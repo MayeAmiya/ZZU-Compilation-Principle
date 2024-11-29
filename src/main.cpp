@@ -25,8 +25,12 @@ int main()
     std::cout << "Please input the filepath : ";
     // std::cin >> filename;
     filename = "/home/kei/code/work8/test/src/src.cpptest";
+    std::cout << filename << std::endl;
+    std::cout << "Please input the buildpath : ";
     // std::cin >> build_path;
     build_path = "./build";
+    std::cout << build_path << std::endl;
+    std::cout << std::endl;
 
     Pretreat pretreat(filename, build_path);
     pretreat.build();
@@ -47,15 +51,23 @@ int main()
 
     std::string_view sv = input;
 
-    Lexer lexer(sv, build_path);
+    Lexer lexer(sv);
 
     lexer.lexer_exec();
     lexer.lexer_show();
 
-    LLParser llparser(build_path);
-    llparser.LLparser_output();
+    ParserPre parserpre;
+    parserpre.parserpre_grammar();
+    parserpre.parserpre_output();
+
+    LLParser llparser(parserpre);
     llparser.LLparser_M();
     llparser.LLparsing(lexer._output);
+
+    LRParser lrparser(parserpre);
+    lrparser.LRparser_C();
+    lrparser.LRparser_M();
+    lrparser.LRParsing(lexer._output);
 
     std::cout << std::endl << "Press Enter to continue..." << std::endl;
 

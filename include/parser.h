@@ -8,7 +8,7 @@
 
 #include "lexer.h"
 
-class LLParser
+class ParserPre
 {
 public:
     std::map<std::string, std::set<std::string>>    firstSet;
@@ -16,49 +16,60 @@ public:
     std::map<std::string, std::set<std::string>>    followSet;
     std::map<std::string, std::vector<std::string>> grammar;
 
-    std::set<std::string>                                     terSymbol;      // 从rwtab中获取
-    std::set<std::string>                                     nonTerSymbol;   // 从formula中获取
+    std::set<std::string> terSymbol;      // 从rwtab中获取
+    std::set<std::string> nonTerSymbol;   // 从formula中获取
+
+    std::string parserpre_result_output = "./build/parserpre.out";
+
+    void parserpre_first(const std::string& symbol);
+    bool parserpre_follow(const std::string& symbol, bool second);
+    void parserpre_grammar();
+    void parserpre_output();
+};
+
+class LLParser
+{
+public:
+    ParserPre&                                                parserpre;
     std::map<std::string, std::map<std::string, std::string>> parseTable;
+    std::string llparser_result_output = "./build/LL/llparser.out";
 
-    std::string llparser_result_output = "";
+    LLParser(ParserPre& parserpre)
+        : parserpre(parserpre) {};
 
-    LLParser(std::string build_path) { llparser_result_output = build_path + "/llparser.out"; };
 
-    void LLparser_first(const std::string& symbol);
-    bool LLparser_follow(const std::string& symbol, bool second);
-    void LLparser_grammar(const std::vector<std::string>&   formula,
-                          const std::map<std::string, int>& rwtab);
-    void LLparser_output();
     void LLparser_M();
     void LLparsing(std::vector<Token> tokenlist);
 };
+;
 
-typedef struct
-{                       /*文法*/
-    char        head;   // 产生式左部符号
-    std::string b;      // 用于存放产生式
-    int         point;
-    // int         lg;   // 产生式的长度 b.size()
-} regular;
-typedef struct
-{
-    // int                      l;   // 文法数量 re.size()
-    // int                      m;   // vn 数量  vn.size()
-    // int                      n;   // vt 数量  vt.size()
-    std::vector<regular>     re;
-    std::vector<std::string> vn;   // 非终结符
-    std::vector<std::string> vt;   // 终结符
-} condition;
+typedef std::set<std::pair<std::string, std::vector<std::string>>> ItemSet;
+// 项目集 一个项目集是一个由项目组成的集合，一个项目是一个产生式和一个点组成的二元组
 
 class LRParser
 {
-    std::vector<condition> cd;
-    std::vector<regular>   first;
-    LRParser() = default;
+public:
+    ParserPre&                                                parserpre;
+    std::map<std::string, std::map<std::string, std::string>> parseTable;
+    std::string lrparser_result_output = "./build/LR/lrparser.out";
+
+    LRParser(ParserPre& parserpre)
+        : parserpre(parserpre) {};
+
+    std::map<std::pair<int, std::string>, std::string> actionTable;
+    std::map<std::pair<int, std::string>, int>         gotoTable;
+    ItemSet gotoFunction(const ItemSet& items, const std::string& symbol);
+    ItemSet closure(const ItemSet& items);
+    // 构建项目集规范族和 DFA
+    std::vector<ItemSet>   canonicalCollection;
+    std::map<ItemSet, int> stateMap;
+    std::queue<ItemSet>    stateQueue;
 
     void LRparser_C();
     void LRparser_M();
-    void LRParsing();
+
+    void LRParsing(const std::vector<Token>& tokens);
 };
+
 
 #endif   // parser.h

@@ -16,6 +16,8 @@ void Pretreat::build()
     std::ifstream src(src_file, std::ios::binary);
     // 创建build_path文件夹（如果不存在该文件夹的话）
     std::filesystem::create_directories(build_path);
+    std::filesystem::create_directories(build_path + "/LL");
+    std::filesystem::create_directories(build_path + "/LR");
 
     this->build_file =
         build_path + "/" + std::filesystem::path(src_file).stem().string() + ".cpptemp";

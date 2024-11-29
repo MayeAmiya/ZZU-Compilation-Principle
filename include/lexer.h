@@ -21,12 +21,12 @@ public:
 
     std::string lexer_result_output;
 
-    Lexer(std::string_view sv, std::string build_path)
+    Lexer(std::string_view sv)
         : _input(sv)
         , _buffer()
     {
         char_exec           = _input.begin();
-        lexer_result_output = build_path + "/lexer.out";
+        lexer_result_output = "./build/lexer.out";
     }
 
     void lexer_exec();

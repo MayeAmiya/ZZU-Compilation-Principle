@@ -5,6 +5,7 @@
 #include <vector>
 
 static const std::vector<std::string> formula = {
+    "Src' -> Src",
     "Src -> Imports Global FunctionDefines Main",
     // 定义开始
     "Imports -> Import Imports",
